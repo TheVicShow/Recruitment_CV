@@ -79,19 +79,12 @@ def predict_pdf(text):
     single_input_new = np.expand_dims(pads_new[0], axis=0)
     prediction = model_tf.predict(single_input_new)
 
-    total = 0
+    return_values = []
 
     for idx, p_1 in enumerate(prediction[0]):
-        print(
-            "el CV tiene",
-            (p_1 * 100).round(2),
-            "% de ser apto para la posición de",
-            categories[idx],
-        )
-        total += (p_1 * 100).round(2)
+        return_values.append({"name": categories[idx], "value": (p_1 * 100).round(2)})
 
-    print()
-    print("Total", total.round(2), "%")
+    return return_values
 
 
 @app.route("/", methods=["GET"])
@@ -102,19 +95,16 @@ def home():
 @app.route("/upload", methods=["POST", "GET"])
 def fileUpload():
     if request.method == "POST":
-        file = request.files.getlist("files")
-        filename = ""
+        file = request.files.getlist("files")        
         for f in file:
             pdf_f = pdf.PdfReader(f)
-            filename = f.filename
-            
+
             text = ""
             for page_num in range(len(pdf_f.pages)):
                 page = pdf_f.pages[page_num]
                 text += page.extract_text()
-
-            predict_pdf(text)
-        return jsonify({"name": filename, "status": "success"})
+            
+        return jsonify(predict_pdf(text))
     else:
         return jsonify({"status": "Upload API GET Request Running"})
 
