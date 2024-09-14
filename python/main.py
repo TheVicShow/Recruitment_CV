@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 import os
 import PyPDF2 as pdf
 import re
@@ -16,6 +17,7 @@ from tensorflow import keras
 ALLOWED_EXTENSIONS = set(["pdf"])
 UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "Downloads"))
 app = Flask(__name__)
+CORS(app) 
 app.config["DEBUG"] = True
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1000 * 1000
@@ -72,17 +74,32 @@ def clean_text(text):
     return text
 
 
-def predict_pdf(text):
+def predict_pdf(text, type):
     predict_clean_text = clean_text(text)
     tokens_new = tokenizer.texts_to_sequences([predict_clean_text])
     pads_new = pad_sequences(tokens_new, maxlen=200, padding="post")
     single_input_new = np.expand_dims(pads_new[0], axis=0)
     prediction = model_tf.predict(single_input_new)
 
-    return_values = []
+    return_values = {
+        "primaryresult": {
+            "percentage": None,
+            "position": None,
+        },
+        "otherresults": [],
+    }
 
     for idx, p_1 in enumerate(prediction[0]):
-        return_values.append({"name": categories[idx], "value": (p_1 * 100).round(2)})
+        percentage = (p_1 * 100).round(2)
+
+        if type == categories[idx]:
+            return_values["primaryresult"]["percentage"] = percentage
+            return_values["primaryresult"]["position"] = type
+        else:
+            if percentage > 15.0:
+                return_values["otherresults"].append(
+                    {"percentage": percentage, "position": categories[idx]}
+                )
 
     return return_values
 
@@ -95,7 +112,11 @@ def home():
 @app.route("/upload", methods=["POST", "GET"])
 def fileUpload():
     if request.method == "POST":
-        file = request.files.getlist("files")        
+        type_category = request.form["type"]
+        if type_category is None:
+            return jsonify({"msg": "The Type must be in the Form Data"})
+
+        file = request.files.getlist("files")
         for f in file:
             pdf_f = pdf.PdfReader(f)
 
@@ -103,8 +124,8 @@ def fileUpload():
             for page_num in range(len(pdf_f.pages)):
                 page = pdf_f.pages[page_num]
                 text += page.extract_text()
-            
-        return jsonify(predict_pdf(text))
+
+        return jsonify(predict_pdf(text, type_category))
     else:
         return jsonify({"status": "Upload API GET Request Running"})
 

@@ -69,20 +69,25 @@ export default function Home() {
   const analizepdf = async () => {
     setIsRefreshing(true);
     setShowed(false);
-
     const updatedFiles = files.map(file => ({ ...file, deleteAfter: false, pass: false }));
-    setFiles(updatedFiles);
 
     for (let i = 0; i < updatedFiles.length; i++) {
-      const item = updatedFiles[i];
+      const item = files[i];
+
+      var consumeAPI = new FormData();
+      consumeAPI.append('files', item);
+      consumeAPI.append('type', selectedJob);
 
       setFiles(prevFiles => prevFiles.map(file =>
         file === item ? { ...file, deleteAfter: true, pass: true } : file
       ));
 
-      let position = await axios.post("api/analize", { index: i })
-
-      await sleep(2000);
+      let position = await axios.post("http://localhost:5000/upload", consumeAPI, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "Access-Control-Allow-Origin": "*"
+        }
+      })
 
       setAnalizedFiles(oldFile => [...oldFile, { item, results: position.data }]);
 
@@ -126,7 +131,7 @@ export default function Home() {
     otherpos.map((pos, index) => {
       if ((totalindex - 1) == index) {
         rtn_otherpositions = rtn_otherpositions.substring(0, rtn_otherpositions.length - 2)
-        rtn_otherpositions += ` o ${pos.position}`
+        rtn_otherpositions += `${rtn_otherpositions != "" ? ' o ' : ''} ${pos.position}`
       } else {
         rtn_otherpositions += `${pos.position}, `
       }
@@ -137,21 +142,21 @@ export default function Home() {
 
   const iconPosition = (percentage) => {
     switch (true) {
-      case percentage >= 50:
+      case percentage >= 30:
         return <>
           <div className="flex justify-center">
             <FaCircleCheck className="text-green-600" />
           </div>
           <div className="text-xs pt-2">Apto</div>
         </>
-      case percentage >= 20:
+      case percentage >= 10:
         return <>
           <div className="flex justify-center">
             <FaCircleInfo className="text-yellow-300" />
           </div>
           <div className="text-xs pt-2">Apto (Es necesario realizar examenes o entrevistas)</div>
         </>
-      case percentage < 19:
+      case percentage < 9:
         return <>
           <div className="flex justify-center">
             <FaCircleXmark className="text-red-600" />
@@ -319,7 +324,7 @@ export default function Home() {
                 {iconPosition(value.results.primaryresult.percentage)}
               </div>
               <hr className="h-px my-4 bg-gray-200 border-0 dark:bg-gray-700"></hr>
-              <span className="pt-2 m-2">Ademas se puede considerar para:</span>
+              <span className="pt-2 m-2">{value.results.primaryresult.percentage < 9 ? "Pero" : "Ademas"} se puede considerar para:</span>
               <div className="whitespace-pre-line m-2 font-bold">
                 {otherPositions(value.results.otherresults)}
               </div>
