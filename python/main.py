@@ -15,11 +15,9 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences  # type: ignor
 from tensorflow import keras
 
 ALLOWED_EXTENSIONS = set(["pdf"])
-UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "Downloads"))
 app = Flask(__name__)
 CORS(app) 
 app.config["DEBUG"] = True
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1000 * 1000
 app.config["CORS_HEADER"] = "application/json"
 model_tf = keras.models.load_model("cv_recruitment.keras")

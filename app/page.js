@@ -318,7 +318,7 @@ export default function Home() {
                 {value.item.path}
               </p>
               <div className="text-center">
-                <p className="pt-2 m-2">El candidato para <strong>{value.results.primaryresult.position}</strong> se considera:</p>
+                <p className="pt-2 m-2">El candidato para <strong>{value.results.primaryresult.position || selectedJob}</strong> se considera:</p>
               </div>
               <div className="text-center text-5xl py-2">
                 {iconPosition(value.results.primaryresult.percentage)}
