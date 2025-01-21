@@ -10,7 +10,6 @@ import pickle
 
 print(tf.__version__)
 
-from tensorflow.keras.preprocessing.text import Tokenizer  # type: ignore
 from tensorflow.keras.preprocessing.sequence import pad_sequences  # type: ignore
 from tensorflow import keras
 
